@@ -266,7 +266,7 @@ with tab1:
 
 # =======================
 # TAB 2: DASHBOARD
-# =======================
+# ========================
 
 with tab2:
     st.subheader("📊 Dashboard Geral")
