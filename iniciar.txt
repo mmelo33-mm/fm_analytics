@@ -1,0 +1,7 @@
+abrir ambiente virtual
+
+venv\Scripts\activate.bat
+
+iniciar
+
+streamlit run app.py
