@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import time
 from datetime import datetime, timedelta
 from database import criar_tabela, inserir_partida, buscar_partidas, deletar_partida
 from utils import (
@@ -98,31 +99,13 @@ with col_logo:
     st.title("⚽ FM Analytics")
     st.caption("Análise profissional para Football Manager")
 
-with col_licenca:
-    info = licenca.get_info()
-    st.metric(
-        label=f"{info['badge']} {info['nome']}",
-        value=f"{info['limite_partidas']} partidas" if info['limite_partidas'] < 999 else "Ilimitado",
-        delta=f"{info['dias_restantes']} dias" if info['plano'] != "FREE" else None
-    )
-
-# with col_upgrade:
-#     if licenca.plano == "FREE":
-#         if st.button("⭐ FAZER UPGRADE", type="primary", use_container_width=True):
-#             st.switch_page("pages/upgrade.py")  # Página de upgrade (criar depois)
-#     elif licenca.dias_restantes() < 7:
-#         st.warning(f"⚠️ {licenca.dias_restantes()} dias restantes")
-#         if st.button("🔄 Renovar", type="primary", use_container_width=True):
-#             st.switch_page("pages/pagamento.py")
-
 # =======================
 # TABS PRINCIPAIS
 # =======================
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3 = st.tabs([
     "📝 Cadastrar Partida",
     "📊 Dashboard", 
     "📋 Histórico",
-    "⭐ Preços"
 ])
 
 # =======================
@@ -157,14 +140,6 @@ with tab1:
         
         st.stop()
     
-    # Mostrar contador
-    partidas_restantes = licenca.configuracao['limite_partidas'] - num_partidas
-    
-    if licenca.plano == "FREE":
-        if partidas_restantes <= 2:
-            st.warning(f"⚠️ Apenas **{partidas_restantes}** partida(s) restante(s)! Faça upgrade para continuar.")
-        else:
-            st.info(f"📊 Partidas: **{num_partidas}/{licenca.configuracao['limite_partidas']}** | Restantes: **{partidas_restantes}**")
     
     # Formulário de cadastro
     col1, col2 = st.columns(2)
@@ -249,18 +224,21 @@ with tab1:
                 st.warning(mensagem)
             
             if inserir_partida(dados):
+                
+                progress_text = "Salvando partida..."
+                my_bar = st.progress(0, text=progress_text)
+
+                for percent_complete in range(100):
+                    time.sleep(0.02)
+                my_bar.progress(percent_complete + 1, text=progress_text)
+                time.sleep(1)
+                my_bar.empty()
+                    
+                    
                 st.success("✅ Partida salva com sucesso!")
-                st.balloons()
                 
                 # Se for última partida gratuita, mostrar oferta
-                if licenca.plano == "FREE" and (num_partidas + 1) >= licenca.configuracao['limite_partidas']:
-                    st.warning("🎉 Você cadastrou todas as suas partidas gratuitas!")
-                    st.info("⭐ **Oferta especial:** Upgrade agora e ganhe 30% OFF no primeiro mês!")
-                    if st.button("Ver Planos Premium", type="primary"):
-                        st.switch_page("pages/upgrade.py")
-            else:
-                st.error("❌ Erro ao salvar partida. Tente novamente.")
-
+                
 
 
 
@@ -578,12 +556,8 @@ with col3:
     fig_casa_fora.update_layout(barmode='group', title_text='Resultados: Casa vs Fora')
     st.plotly_chart(fig_casa_fora, use_container_width=True)
 
-# =======================
 # TAB 3: HISTÓRICO
-# =======================
-# =======================
-# TAB 3: HISTÓRICO
-# =======================
+
 with tab3:
     st.subheader("📋 Histórico Completo de Partidas")
     
@@ -620,158 +594,20 @@ with tab3:
             st.rerun()
         else:
             st.error("❌ Erro ao deletar partida.")
-
-# =======================
-# TAB 4: PLANOS & UPGRADE
-# =======================
-# with tab4:
-#     st.subheader("⭐ Planos e Upgrade")
-    
-#     # Mostrar plano atual
-#     info = licenca.get_info()
-    
-#     col1, col2, col3 = st.columns([1, 2, 1])
-#     with col2:
-#         st.success(f"""
-#         ### {info['badge']} Plano Atual: {info['nome']}
-        
-#         {'✅ Ativo' if info['ativa'] else '❌ Expirado'}
-#         {f"📅 Expira em {info['dias_restantes']} dias" if info['plano'] != 'FREE' else ''}
-#         """)
-    
-#     st.divider()
-    
-#     # Comparação de planos
-#     st.subheader("📊 Compare os Planos")
-    
-#     cols = st.columns(4)
-    
-#     for idx, (plano_id, plano) in enumerate(PLANOS.items()):
-#         with cols[idx]:
-#             # Card do plano
-#             cor_badge = {"FREE": "🆓", "STARTER": "🌟", "PRO": "⚡", "TEAM": "🏆"}
-            
-#             st.markdown(f"""
-#             ### {cor_badge[plano_id]} {plano['nome']}
-            
-#             **{'GRÁTIS' if plano['preco_mensal'] == 0 else f"R$ {plano['preco_mensal']:.2f}/mês"}**
-            
-#             {f"*ou R$ {plano['preco_anual']:.2f}/ano*" if plano['preco_anual'] > 0 else ''}
-#             """)
-            
-#             st.markdown("---")
-            
-#             # Recursos
-#             st.markdown(f"""
-#             **Recursos:**
-            
-#             {'✅' if plano['limite_partidas'] > 999 else '📊'} {plano['limite_partidas'] if plano['limite_partidas'] < 999 else 'Ilimitadas'} partidas
-            
-#             {'✅' if plano['exportar_pdf'] else '❌'} Exportar PDF
-            
-#             {'✅' if plano.get('exportar_excel', False) else '❌'} Exportar Excel
-            
-#             {'✅' if plano.get('backup_nuvem', False) else '❌'} Backup nuvem
-            
-#             {'✅' if plano.get('multiplos_times', False) else '❌'} Múltiplos times
-            
-#             **Suporte:** {plano['suporte']}
-#             """)
-            
-#             # Botão de ação
-#             if plano_id == licenca.plano:
-#                 st.success("✅ Plano Atual")
-#             elif plano_id == "FREE":
-#                 st.info("Grátis para sempre")
-#             else:
-#                 if st.button(f"Escolher {plano['nome']}", key=f"btn_{plano_id}", use_container_width=True):
-#                     st.info(f"Redirecionando para pagamento do plano {plano['nome']}...")
-#                     # Aqui você implementaria a integração com pagamento
-    
-#     st.divider()
-    
-#     # Ofertas especiais
-#     st.subheader("🎁 Ofertas Especiais")
-    
-#     col1, col2 = st.columns(2)
-    
-#     with col1:
-#         st.info("""
-#         ### 🎉 Oferta de Lançamento
-        
-#         **30% OFF no primeiro mês** em qualquer plano pago!
-        
-#         Use o cupom: **LANCAMENTO30**
-#         """)
-    
-#     with col2:
-#         st.success("""
-#         ### 💎 Plano Anual
-        
-#         **Economize 17%** pagando anualmente!
-        
-#         Pague 10 meses, ganhe 12!
-#         """)
-    
-#     st.divider()
-    
-#     # FAQ
-#     with st.expander("❓ Perguntas Frequentes"):
-#         st.markdown("""
-#         **Posso cancelar a qualquer momento?**
-#         Sim! Sem fidelidade ou multas.
-        
-#         **Como funciona o período de teste?**
-#         7 dias grátis para testar o plano PRO.
-        
-#         **Posso mudar de plano depois?**
-#         Sim! Upgrade ou downgrade a qualquer momento.
-        
-#         **Aceitam quais formas de pagamento?**
-#         Cartão de crédito, PIX e boleto.
-        
-#         **Os dados ficam salvos ao cancelar?**
-#         Sim, por 30 dias. Depois são excluídos.
-#         """)
-    
-#     # Testemunhos
-#     st.divider()
-#     st.subheader("💬 O que dizem nossos usuários")
-    
-#     col1, col2, col3 = st.columns(3)
-
-#     with col1:
-#         st.info("""
-#         *"Mudou completamente minha forma de jogar FM. Agora entendo onde estou errando!"*
-        
-#         — João, SP
-#         """)
-    
-#     with col2:
-#         st.info("""
-#         *"Vale muito a pena! Os relatórios em PDF economizam horas de análise."*
-        
-#         — Maria, RJ
-#         """)
-    
-#     with col3:
-#         st.info("""
-#         *"Indispensável para quem leva FM a sério. Plano PRO é o melhor investimento!"*
-        
-#         — Pedro, MG
-#         """)
-
 # =======================
 # FOOTER
 # =======================
 st.divider()
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.caption("📧 Suporte: onzevirtual1895@gmail.com")
+    st.caption("📧 E-Mail para contato: onzevirtual1895@gmail.com")
 
 with col2:
     st.caption("🔒 Seus dados estão seguros")
 
 with col3:
-    st.caption(f"v1.0 | {licenca.get_badge()} {licenca.plano}")
+    st.link_button("Canal Onze Virtual FC", "https://www.youtube.com/@OnzeVirtual-FC")
+
+with col4:
+    st.caption("V 1.10")    

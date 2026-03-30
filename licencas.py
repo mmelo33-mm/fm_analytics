@@ -11,20 +11,22 @@ import json
 
 PLANOS = {
     "FREE": {
-        "nome": "Grátis",
-        "preco_mensal": 0,
-        "preco_anual": 0,
-        "limite_partidas": 5,
-        "limite_times": 1,
-        "limite_temporadas": 1,
-        "exportar_pdf": False,
-        "exportar_excel": False,
-        "backup_nuvem": False,
-        "multiplos_times": False,
-        "graficos_avancados": False,
-        "comparar_temporadas": False,
-        "suporte": "comunidade",
-        "cor": "gray"
+        "nome": "FREE",
+        "preco_mensal": 99.90,
+        "preco_anual": 999.00,  # ~17% desconto
+        "limite_partidas": 999999,
+        "limite_times": 999999,
+        "limite_temporadas": 999999,
+        "limite_usuarios": 5,
+        "exportar_pdf": True,
+        "exportar_excel": True,
+        "backup_nuvem": True,
+        "multiplos_times": True,
+        "graficos_avancados": True,
+        "comparar_temporadas": True,
+        "api_acesso": True,
+        "suporte": "vip",
+        "cor": "purple"
     },
     "STARTER": {
         "nome": "Starter",
