@@ -9,17 +9,17 @@ import streamlit as st
 
 def conectar():
     # Se DATABASE_URL for uma string completa:
-    return psycopg2.connect(st.secrets["DATABASE_URL"])
+    #return psycopg2.connect(st.secrets["DATABASE_URL"])
 
     # OU, se preferir passar parâmetros explicitamente (mais estável):
-    # return psycopg2.connect(
-    #     host=st.secrets["DB_HOST"],
-    #     database=st.secrets["DB_NAME"],
-    #     user=st.secrets["DB_USER"],
-    #     password=st.secrets["DB_PASS"],
-    #     port=st.secrets["DB_PORT"], # Tente 5432 aqui
-    #     sslmode="require"
-    # )
+     return psycopg2.connect(
+         host=st.secrets["aws-1-us-east-1.pooler.supabase.com"],
+         database=st.secrets["postgres"],
+         user=st.secrets["postgres.danfogegqajnguxycjgs"],
+         password=st.secrets["Cbcxt9bw!Flamengo1895"],
+         port=st.secrets["5432"], # Tente 5432 aqui
+         sslmode="require"
+       )
 
 # =======================
 # CRIAR USUÁRIO
