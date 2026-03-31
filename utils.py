@@ -240,3 +240,4 @@ def validar_dados_partida(dados):
         return True, "⚠️ Aviso: A soma das posses de bola não está próxima de 100%."
     
     return True, ""
+

@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import time
 from datetime import datetime, timedelta
-from database import criar_tabela, inserir_partida, buscar_partidas, deletar_partida
+from database import inserir_partida, buscar_partidas, deletar_partida
 from utils import (
     calcular_aproveitamento, comparar_com_benchmark, calcular_score_benchmark,
     diagnostico_geral, validar_dados_partida, BENCHMARK, RESULTADO_VITORIA,
@@ -12,31 +12,12 @@ from utils import (
     calcular_percentual_passes, calcular_percentual_finalizacao
 )
 from licencas import Licenca, PLANOS, get_mensagem_upgrade, comparar_planos
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import streamlit as st
-from auth import criar_tabela_usuarios, buscar_usuario
+from auth import buscar_usuario
 from licencas import Licenca
 
 # Criar tabelas
-criar_tabela_usuarios()
+
 
 # Verificar login
 if 'logado' not in st.session_state or not st.session_state.logado:
@@ -69,7 +50,7 @@ st.session_state.licenca = licenca
 # CONFIGURAÇÃO PÁGINA
 # =======================
 st.set_page_config(
-    page_title="FM Analytics",
+    page_title="FM Analytics 26",
     page_icon="⚽",
     layout="wide"
 )
@@ -77,7 +58,7 @@ st.set_page_config(
 # =======================
 # INICIALIZAÇÃO
 # =======================
-criar_tabela()
+
 
 # Inicializar licença do usuário (por enquanto FREE, depois virá do banco)
 if 'licenca' not in st.session_state:
@@ -96,7 +77,7 @@ licenca = st.session_state.licenca
 col_logo, col_licenca, col_upgrade = st.columns([2, 1, 1])
 
 with col_logo:
-    st.title("⚽ FM Analytics")
+    st.title("⚽ FM Analytics 26")
     st.caption("Análise profissional para Football Manager")
 
 # =======================
@@ -245,6 +226,8 @@ with tab1:
 # =======================
 # TAB 2: DASHBOARD
 # ========================
+
+
 
 with tab2:
     st.subheader("📊 Dashboard Geral")
@@ -405,6 +388,13 @@ with tab2:
         with col2:
             st.markdown(f":{cor}[{status}]")
 
+
+
+
+
+
+
+
     # Diagnóstico
     score = calcular_score_benchmark(df_filtrado, aproveitamento_geral)
     tipo_msg, msg = diagnostico_geral(score)
@@ -454,6 +444,7 @@ with tab2:
     col9.metric("Aproveitamento de passes", f"{calcular_percentual_passes(ultimos_5['passes_certos_adv'].sum(), ultimos_5['passes_totais_adv'].sum()):.1f}%")
 
 
+    
     st.divider()
     st.subheader("🔥 Últimos 5 Jogos (Casa x Fora)")
     # =======================
@@ -610,4 +601,4 @@ with col3:
     st.link_button("Canal Onze Virtual FC", "https://www.youtube.com/@OnzeVirtual-FC")
 
 with col4:
-    st.caption("V 1.10")    
+    st.caption("V 1.11")    
