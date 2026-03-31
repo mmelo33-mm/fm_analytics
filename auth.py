@@ -14,22 +14,22 @@ def conectar():
         user=st.secrets["DB_USER"],
         password=st.secrets["DB_PASSWORD"],
         port=int(st.secrets["DB_PORT"]),
-        sslmode="require"  # 🔥 obrigatório no Supabase
+        sslmode="require"  
     )
 
 # =======================
 # CRIAR USUÁRIO
 # =======================
-def criar_usuario(email, senha):
+def criar_usuario(usuario, senha):
     conn = conectar()
     cursor = conn.cursor()
 
     try:
         cursor.execute("""
-            INSERT INTO usuarios (email, senha)
+            INSERT INTO usuarios (usuario, senha)
             VALUES (%s, %s)
             RETURNING id
-        """, (email, senha))
+        """, (usuario, senha))
 
         user_id = cursor.fetchone()[0]
         conn.commit()
@@ -44,16 +44,16 @@ def criar_usuario(email, senha):
         conn.close()
 
 # =======================
-# BUSCAR USUÁRIO POR EMAIL
+# BUSCAR USUÁRIO
 # =======================
-def buscar_usuario_por_email(email):
+def buscar_usuario_por_usuario(usuario):
     conn = conectar()
     cursor = conn.cursor()
 
     try:
         cursor.execute("""
-            SELECT * FROM usuarios WHERE email = %s
-        """, (email,))
+            SELECT * FROM usuarios WHERE usuario = %s
+        """, (usuario,))
 
         return cursor.fetchone()
 
@@ -81,7 +81,7 @@ def buscar_usuario(usuario_id):
         if user:
             return {
                 "id": user[0],
-                "email": user[1],
+                "usuario": user[1],
                 "senha": user[2],
                 "plano": user[3],
                 "data_expiracao": user[4]
@@ -99,8 +99,8 @@ def buscar_usuario(usuario_id):
 # =======================
 # LOGIN
 # =======================
-def autenticar_usuario(email, senha):
-    usuario = buscar_usuario_por_email(email)
+def autenticar_usuario(usuario, senha):
+    usuario = buscar_usuario_por_usuario(usuario)
 
     if usuario and usuario[2] == senha:
         return usuario[0]  # retorna ID do usuário
