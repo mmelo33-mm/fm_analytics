@@ -6,10 +6,10 @@ import streamlit as st
 # =======================
 def conectar():
     return psycopg2.connect(
-        host=st.secrets["DB_HOST"],
-        database=st.secrets["DB_NAME"],
-        user=st.secrets["DB_USER"],
-        password=st.secrets["DB_PASSWORD"],
+        host=st.secrets["db.danfogegqajnguxycjgs.supabase.co"],
+        database=st.secrets["postgres"],
+        user=st.secrets["postgres"],
+        password=st.secrets["Cbcxt9bw!Flamengo1895"],
         port=5432
     )
 
