@@ -17,6 +17,14 @@ STRINGS = {
         "ia_analisar": "🪄 Gerar Relatório de Performance",
         "ia_veredito": "📋 Veredito do Assistente",
         "metrica_aproveitamento": "Aproveitamento",
+        "total_partidas": "Total de Partidas",
+        "vitorias": "Vitórias",
+        "empates": "Empates",
+        "derrotas": "Derrotas",
+        "lbl_filtro_temporada": "Temporada",
+        "lbl_filtro_competicao": "Competição",
+        "analise_desempenho": "Análise de Desempenho",
+        "gols_vs_xg": "Gols vs xG ao longo do tempo"
     },
     "en": {
         "header_titulo": "⚽ FM Analytics 26",
@@ -34,6 +42,14 @@ STRINGS = {
         "ia_analisar": "🪄 Generate Performance Report",
         "ia_veredito": "📋 Assistant's Verdict",
         "metrica_aproveitamento": "Win Rate",
+        "total_partidas": "Total Matches",
+        "vitorias": "Wins",
+        "empates": "Draws",
+        "derrotas": "Losses",
+        "lbl_filtro_temporada": "Season",
+        "lbl_filtro_competicao": "Competition",
+        "analise_desempenho": "Performance Analysis",
+        "gols_vs_xg": "Goals vs xG Over Time"
     },
     "es": {
         "header_titulo": "⚽ FM Analytics 26",
@@ -51,6 +67,14 @@ STRINGS = {
         "ia_analisar": "🪄 Generar Informe de Rendimiento",
         "ia_veredito": "📋 Veredicto del Asistente",
         "metrica_aproveitamento": "Rendimiento",
+        "total_partidas": "Total de Partidos",
+        "vitorias": "Victorias",
+        "empates": "Empates",
+        "derrotas": "Derrotas",
+        "lbl_filtro_temporada": "Temporada",
+        "lbl_filtro_competicao": "Competición",
+        "analise_desempenho": "Análisis de Rendimiento",
+        "gols_vs_xg": "Goles vs xG a lo largo del tiempo"
     },
     "pt-pt": {
         "header_titulo": "⚽ FM Analytics 26",
@@ -68,5 +92,13 @@ STRINGS = {
         "ia_analisar": "🪄 Gerar Relatório de Performance",
         "ia_veredito": "📋 Veredito do Assistente",
         "metrica_aproveitamento": "Aproveitamento",
+        "total_partidas": "Total de Partidas",
+        "vitorias": "Vitórias",
+        "empates": "Empates",
+        "derrotas": "Derrotas",
+        "lbl_filtro_temporada": "Temporada",
+        "lbl_filtro_competicao": "Competição",
+        "analise_desempenho": "Análise de Desempenho",
+        "gols_vs_xg": "Golos vs xG ao longo do tempo"
     }
 }
