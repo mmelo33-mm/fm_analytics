@@ -186,7 +186,7 @@ with tab1:
                 st.rerun()
 
 # =======================
-# TAB 2: DASHBOARD
+# TAB 2: DASHBOARD (COMPLETA)
 # =======================
 with tab2:
     st.subheader(t["tab_dashboard"])
@@ -194,22 +194,57 @@ with tab2:
     
     if not partidas:
         st.info("🎯 Start by adding your first match / Comece adicionando sua primeira partida!")
-        st.stop()
-    
-    df = pd.DataFrame(partidas, columns=[
-        "id", "usuario_id", "time_usuario", "time_adv", "local", "competicao", "temporada", "data", "rodada",
-        "posse_usuario", "remates_usuario", "remates_a_baliza_usuario", "xg_usuario",
-        "oportunidades_flagrantes_usuario", "cantos_usuario", "passes_totais_usuario",
-        "passes_certos_usuario", "cruzamentos_totais_usuario", "cruzamentos_certos_usuario",
-        "gols_usuario", "posse_adv", "remates_adv", "remates_a_baliza_adv", "xg_adv",
-        "oportunidades_flagrantes_adv", "cantos_adv", "passes_totais_adv",
-        "passes_certos_adv", "cruzamentos_totais_adv", "cruzamentos_certos_adv",
-        "gols_adv", "resultado"
-    ])
-    df["data"] = pd.to_datetime(df["data"])
-    
-    # Filtros e métricas seguem o mesmo padrão usando t["chave"]
-    # ... (O restante do Dashboard deve usar as variáveis t["metrica_aproveitamento"], etc.)
+    else:
+        df = pd.DataFrame(partidas, columns=[
+            "id", "usuario_id", "time_usuario", "time_adv", "local", "competicao", "temporada", "data", "rodada",
+            "posse_usuario", "remates_usuario", "remates_a_baliza_usuario", "xg_usuario",
+            "oportunidades_flagrantes_usuario", "cantos_usuario", "passes_totais_usuario",
+            "passes_certos_usuario", "cruzamentos_totais_usuario", "cruzamentos_certos_usuario",
+            "gols_usuario", "posse_adv", "remates_adv", "remates_a_baliza_adv", "xg_adv",
+            "oportunidades_flagrantes_adv", "cantos_adv", "passes_totais_adv",
+            "passes_certos_adv", "cruzamentos_totais_adv", "cruzamentos_certos_adv",
+            "gols_adv", "resultado"
+        ])
+        df["data"] = pd.to_datetime(df["data"])
+
+        # --- FILTROS ---
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            lista_temporadas = ["All"] + sorted(df["temporada"].unique().tolist())
+            temp_sel = st.selectbox(t.get("lbl_filtro_temporada", "Season"), lista_temporadas)
+        with col_f2:
+            lista_comps = ["All"] + sorted(df["competicao"].unique().tolist())
+            comp_sel = st.selectbox(t.get("lbl_filtro_competicao", "Competition"), lista_comps)
+
+        # Aplicar Filtros
+        df_filtrado = df.copy()
+        if temp_sel != "All":
+            df_filtrado = df_filtrado[df_filtrado["temporada"] == temp_sel]
+        if comp_sel != "All":
+            df_filtrado = df_filtrado[df_filtrado["competicao"] == comp_sel]
+
+        # --- MÉTRICAS PRINCIPAIS ---
+        aproveitamento_geral = calcular_aproveitamento(df_filtrado)
+        vitorias = len(df_filtrado[df_filtrado["resultado"] == RESULTADO_VITORIA])
+        empates = len(df_filtrado[df_filtrado["resultado"] == RESULTADO_EMPATE])
+        derrotas = len(df_filtrado[df_filtrado["resultado"] == RESULTADO_DERROTA])
+
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric(t["metrica_aproveitamento"], f"{aproveitamento_geral}%")
+        m2.metric(t.get("vitorias", "Wins"), vitorias)
+        m3.metric(t.get("empates", "Draws"), empates)
+        m4.metric(t.get("derrotas", "Losses"), derrotas)
+
+        # --- GRÁFICOS ---
+        st.subheader(t.get("analise_desempenho", "Performance Analysis"))
+        
+        # Gráfico de Gols vs xG (Exemplo)
+        fig = px.line(df_filtrado.sort_values("data"), x="data", y=["gols_usuario", "xg_usuario"], 
+                      title="Gols vs xG Over Time", markers=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Guardar df_filtrado no session_state para a IA usar na Tab 4
+        st.session_state.df_para_ia = df_filtrado
 
 # =======================
 # TAB 4: ASSISTENTE IA (NOVA)
