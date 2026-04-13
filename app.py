@@ -5,16 +5,16 @@ import plotly.graph_objects as go
 import time
 from datetime import datetime, timedelta
 from database import inserir_partida, buscar_partidas, deletar_partida
+from licencas import Licenca, PLANOS, get_mensagem_upgrade, comparar_planos
+from auth import buscar_usuario
+from licencas import Licenca
+from lang import STRINGS
 from utils import (
     calcular_aproveitamento, comparar_com_benchmark, calcular_score_benchmark,
     diagnostico_geral, validar_dados_partida, BENCHMARK, RESULTADO_VITORIA,
     RESULTADO_EMPATE, RESULTADO_DERROTA, LOCAL_CASA, LOCAL_FORA,
     calcular_percentual_passes, calcular_percentual_finalizacao
 )
-from licencas import Licenca, PLANOS, get_mensagem_upgrade, comparar_planos
-import streamlit as st
-from auth import buscar_usuario
-from licencas import Licenca
 
 # Criar tabelas
 
@@ -44,7 +44,48 @@ st.session_state.licenca = licenca
 
 
 
+# 1. Inicializar o idioma no st.session_state
+if 'idioma' not in st.session_state:
+    st.session_state.idioma = "pt-br"
 
+# 2. Seletor de Idioma na Sidebar (Demonstra organização de UI/UX)
+with st.sidebar:
+    st.title("⚙️ Configurações")
+    st.session_state.idioma = st.selectbox(
+        "🌐 Idioma / Language",
+        options=["pt-br", "en", "es", "pt-pt"],
+        format_func=lambda x: {
+            "pt-br": "Português (BR)", 
+            "en": "English", 
+            "es": "Español", 
+            "pt-pt": "Português (PT)"
+        }[x]
+    )
+
+# 3. Atalho 't' para os textos (Facilita a escrita do código)
+t = STRINGS[st.session_state.idioma]
+
+# --- EXEMPLO DE USO NO SEU CÓDIGO ---
+
+# No Header:
+st.title(t["header_titulo"])
+st.caption(t["header_caption"])
+
+# Nas Tabs:
+tab1, tab2, tab3, tab4 = st.tabs([
+    t["tab_cadastro"], 
+    t["tab_dashboard"], 
+    t["tab_historico"], 
+    t["tab_ia"]
+])
+
+# No formulário da Tab 1:
+with tab1:
+    time_usuario = st.text_input(t["lbl_seu_time"], key="time_usuario")
+    # ...
+    if st.button(t["btn_salvar"], type="primary"):
+        # ... lógica de salvar ...
+        st.success(t["msg_sucesso"])
 
 # =======================
 # CONFIGURAÇÃO PÁGINA
@@ -84,9 +125,9 @@ with col_logo:
 # TABS PRINCIPAIS
 # =======================
 tab1, tab2, tab3 = st.tabs([
-    "📝 Cadastrar Partida",
-    "📊 Dashboard", 
-    "📋 Histórico",
+    "tab_cadastro",
+    "tab_dashboard", 
+    "tab_historico",
 ])
 
 # =======================
