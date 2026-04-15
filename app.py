@@ -270,7 +270,7 @@ with tab2:
         df_filtrado = df_filtrado[df_filtrado["competicao"] == comp_selecionada]
 
     st.session_state.df_para_ia = df_filtrado
-    
+
     if len(df_filtrado) == 0:
         st.warning(t("nenhum_filtro", lang))
         st.stop()
@@ -561,7 +561,7 @@ with tab4:
     if 'df_para_ia' in st.session_state and not st.session_state.df_para_ia.empty:
         df_ia = st.session_state.df_para_ia
         
-        sst.write(f"📋 {t('total_partidas', lang)}: {len(df_ia)}")
+        st.write(f"📋 {t('total_partidas', lang)}: {len(df_ia)}")
         
         # Botão de Ação
         if st.button(t("ia_analisar", lang), type="primary", use_container_width=True):
