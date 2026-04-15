@@ -33,7 +33,10 @@ st.set_page_config(
 # =======================
 if "idioma" not in st.session_state:
     st.session_state.idioma = "pt-br"
-
+    
+t = STRINGS.get(st.session_state.idioma)
+if t is None:
+    t = STRINGS["pt-br"]
 # =======================
 # VERIFICAR LOGIN
 # =======================
