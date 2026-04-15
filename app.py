@@ -553,16 +553,16 @@ genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-1.5-pro')
 
 with tab4:
-    st.subheader(t["tab_ia"])
+    st.subheader(t("tab_ia", lang))
     
     # Recuperamos o DF filtrado que foi salvo na Tab 2
     if 'df_para_ia' in st.session_state and not st.session_state.df_para_ia.empty:
         df_ia = st.session_state.df_para_ia
         
-        st.write(f"📋 {t['total_partidas']}: {len(df_ia)}")
+        sst.write(f"📋 {t('total_partidas', lang)}: {len(df_ia)}")
         
         # Botão de Ação
-        if st.button(t["ia_analisar"], type="primary", use_container_width=True):
+        if st.button(t("ia_analisar", lang), type="primary", use_container_width=True):
             
             # 1. Seleção de colunas críticas para não poluir o contexto
             colunas_vaitais = [
@@ -579,7 +579,7 @@ with tab4:
             dados_contexto = df_ia[colunas_vaitais].to_csv(index=False)
             
             # 2. Chamada da IA
-            with st.spinner("🧠 " + t.get("ia_processando", "Analyzing data...")):
+            with st.spinner("🧠 " + t("ia_processando", lang)):
                 try:
                     # Injetamos o idioma dinamicamente
                     lang_instruction = f"\n\nIMPORTANT: Respond strictly in {st.session_state.idioma}."
@@ -593,7 +593,7 @@ with tab4:
                 except Exception as e:
                     st.error(f"Error: {e}")
     else:
-        st.warning("⚠️ " + t.get("msg_sem_dados_ia", "Please load data in the Dashboard tab first."))
+        st.warning("⚠️ " + t("msg_sem_dados_ia", lang))
 
 
 # =======================
