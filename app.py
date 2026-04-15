@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import time
 import json
 import requests
-import google.generativeai as genai
+from google import genai
 from datetime import datetime, timedelta
 from database import inserir_partida, buscar_partidas, deletar_partida
 from utils import (
@@ -551,8 +551,7 @@ with tab3:
 # =======================
 # TAB 4: ASSISTENTE IA
 # =======================
-genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel('gemini-1.5-pro-latest')
+client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
 
 with tab4:
     st.subheader(t("tab_ia", lang))
@@ -586,7 +585,12 @@ with tab4:
                     # Injetamos o idioma dinamicamente
                     lang_instruction = f"\n\nIMPORTANT: Respond strictly in {st.session_state.idioma}."
                     
-                    response = model.generate_content([PROMPT_ASSISTENTE + lang_instruction, dados_contexto])
+                    # ✅ Novo
+                    response = client.models.generate_content(
+                        model="gemini-2.0-flash",
+                        contents=PROMPT_ASSISTENTE + lang_instruction + "\n\n" + dados_contexto
+                    )
+
                     
                     st.divider()
                     st.markdown(f"### {t['ia_veredito']}")
