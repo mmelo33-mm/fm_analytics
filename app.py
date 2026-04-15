@@ -552,7 +552,7 @@ with tab3:
 # TAB 4: ASSISTENTE IA
 # =======================
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel('gemini-1.5-pro')
+model = genai.GenerativeModel('gemini-1.5-pro-latest')
 
 with tab4:
     st.subheader(t("tab_ia", lang))
