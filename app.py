@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import time
 import json
 import requests
+import google.generativeai as genai
 from datetime import datetime, timedelta
 from database import inserir_partida, buscar_partidas, deletar_partida
 from utils import (
@@ -16,6 +17,7 @@ from utils import (
 from licencas import Licenca, PLANOS, get_mensagem_upgrade, comparar_planos
 from auth import buscar_usuario
 from lang import STRINGS, IDIOMAS, t
+from utils import PROMPT_ASSISTENTE
 
 # =======================
 # CONFIGURAÇÃO PÁGINA
@@ -546,174 +548,51 @@ with tab3:
 # =======================
 # TAB 4: ASSISTENTE IA
 # =======================
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+model = genai.GenerativeModel('gemini-1.5-pro')
+
 with tab4:
-    st.subheader(t("ia_titulo", lang))
-    st.caption(t("ia_descricao", lang))
-
-    partidas_ia = buscar_partidas(st.session_state.usuario_id)
-
-    if not partidas_ia:
-        st.warning(t("ia_sem_partidas", lang))
-        st.stop()
-
-    colunas_ia = [
-        "id", "usuario_id", "time_usuario", "time_adv", "local", "competicao", "temporada", "data", "rodada",
-        "posse_usuario", "remates_usuario", "remates_a_baliza_usuario", "xg_usuario",
-        "oportunidades_flagrantes_usuario", "cantos_usuario", "passes_totais_usuario",
-        "passes_certos_usuario", "cruzamentos_totais_usuario", "cruzamentos_certos_usuario",
-        "gols_usuario", "posse_adv", "remates_adv", "remates_a_baliza_adv", "xg_adv",
-        "oportunidades_flagrantes_adv", "cantos_adv", "passes_totais_adv",
-        "passes_certos_adv", "cruzamentos_totais_adv", "cruzamentos_certos_adv",
-        "gols_adv", "resultado"
-    ]
-    df_ia = pd.DataFrame(partidas_ia, columns=colunas_ia)
-    df_ia["data"] = pd.to_datetime(df_ia["data"])
-    df_ia = df_ia.sort_values("data")
-
-    n_total = len(df_ia)
-    if n_total < 3:
-        st.info(t("ia_minimo", lang).format(n=n_total))
-
-    # Escopo
-    escopo_opcoes = {
-        t("ia_escopo_todas", lang): None,
-        t("ia_escopo_10", lang): 10,
-        t("ia_escopo_5", lang): 5,
-    }
-    escopo_label = st.selectbox(t("ia_selecionar", lang), list(escopo_opcoes.keys()))
-    escopo_n = escopo_opcoes[escopo_label]
-
-    if escopo_n:
-        df_analise = df_ia.tail(escopo_n)
-    else:
-        df_analise = df_ia.copy()
-
-    n_analise = len(df_analise)
-    st.info(t("ia_partidas_usadas", lang).format(n=n_analise))
-
-    if st.button(t("ia_analisar", lang), type="primary", use_container_width=True):
-        with st.spinner(t("ia_gerando", lang)):
-
-            # Calcular métricas para o prompt
-            aprov = calcular_aproveitamento(df_analise)
-            resumo_res = df_analise["resultado"].value_counts()
-            v = resumo_res.get(RESULTADO_VITORIA, 0)
-            e = resumo_res.get(RESULTADO_EMPATE, 0)
-            d = resumo_res.get(RESULTADO_DERROTA, 0)
-
-            media_xg = df_analise["xg_usuario"].mean()
-            media_gols = df_analise["gols_usuario"].mean()
-            media_remates = df_analise["remates_usuario"].mean()
-            media_remates_alvo = df_analise["remates_a_baliza_usuario"].mean()
-            media_posse = df_analise["posse_usuario"].mean()
-            media_opor = df_analise["oportunidades_flagrantes_usuario"].mean()
-            media_cruzamentos_totais = df_analise["cruzamentos_totais_usuario"].mean()
-            media_cruzamentos_certos = df_analise["cruzamentos_certos_usuario"].mean()
-            media_cantos = df_analise["cantos_usuario"].mean()
-
-            perc_passes_ia = calcular_percentual_passes(
-                df_analise["passes_certos_usuario"].sum(),
-                df_analise["passes_totais_usuario"].sum()
-            )
-            perc_fin_ia = calcular_percentual_finalizacao(
-                df_analise["remates_a_baliza_usuario"].sum(),
-                df_analise["remates_usuario"].sum()
-            )
-
-            # Médias do adversário
-            media_xg_adv = df_analise["xg_adv"].mean()
-            media_gols_adv = df_analise["gols_adv"].mean()
-            media_remates_adv = df_analise["remates_adv"].mean()
-
-            nome_time = df_analise["time_usuario"].iloc[-1] if n_analise > 0 else "O time"
-
-            # Mapa de idioma para o prompt
-            idioma_prompt_map = {
-                "pt-br": "português do Brasil",
-                "pt-pt": "português de Portugal",
-                "en": "English",
-                "es": "español",
-            }
-            idioma_prompt = idioma_prompt_map.get(lang, "português do Brasil")
-
-            system_prompt = f"""Você é um Engenheiro de Dados e Analista de Desempenho (Performance Analyst) especializado em Football Manager. Sua função é atuar como o braço direito do treinador, interpretando dados estatísticos de partidas.
-
-SUAS DIRETRIZES DE ANÁLISE:
-1. Eficiência Ofensiva (xG vs Gols): Se o xG for alto e os gols baixos, identifique desperdício técnico. Se o xG for baixo e os gols altos, identifique sorte ou talento individual acima da média.
-2. Qualidade da Posse: Avalie se a posse de bola é progressiva ou "posse inútil" (muitos passes, mas poucos remates a baliza).
-3. Padrões de Benchmark Europeu:
-   - xG ideal: > 1.23 por jogo
-   - Acerto de passes ideal: > 80%
-   - Conversão de remates (Remates no alvo/Totais): > 35%
-
-ESTRUTURA DO RELATÓRIO — responda SEMPRE neste formato exato:
-#### 📋 Veredito Tático
-[Resumo de 2 frases sobre o momento atual do time]
-
-#### 🔍 Gargalos Identificados
-- **Problema:** [Ex: Baixa conversão de cruzamentos]
-- **Evidência:** [Ex: {media_cruzamentos_totais:.1f} cruzamentos/jogo, apenas {media_cruzamentos_certos:.1f} certos]
-
-#### 💡 Sugestão do Auxiliar
-[Instrução específica para o painel de táticas do FM]
-
-#### 🎯 Próximo Passo
-[Uma meta clara e mensurável para a próxima partida]
-
-RESTRITO: Não invente dados. Use apenas os dados fornecidos. Se os dados forem insuficientes, diga claramente.
-Responda SEMPRE em {idioma_prompt}."""
-
-            user_msg = f"""Analise o desempenho do time "{nome_time}" com base nas seguintes estatísticas médias de {n_analise} partida(s):
-
-RESULTADOS:
-- Aproveitamento: {aprov:.1f}%
-- Vitórias: {v} | Empates: {e} | Derrotas: {d}
-
-OFENSIVO (médias por jogo):
-- xG: {media_xg:.2f} (benchmark europeu: >1.23)
-- Gols: {media_gols:.2f}
-- Remates: {media_remates:.1f}
-- Remates a baliza: {media_remates_alvo:.1f}
-- Conversão de remates: {perc_fin_ia:.1f}% (benchmark: >35%)
-- Oportunidades flagrantes: {media_opor:.2f}
-
-CONSTRUÇÃO DE JOGO:
-- Posse de bola: {media_posse:.1f}%
-- Acerto de passes: {perc_passes_ia:.1f}% (benchmark: >80%)
-- Cruzamentos totais: {media_cruzamentos_totais:.1f} | Cruzamentos certos: {media_cruzamentos_certos:.1f}
-- Cantos: {media_cantos:.1f}
-
-ADVERSÁRIOS (médias por jogo):
-- xG adversário: {media_xg_adv:.2f}
-- Gols sofridos: {media_gols_adv:.2f}
-- Remates adversário: {media_remates_adv:.1f}
-
-Gere o relatório completo seguindo a estrutura definida."""
-
-            try:
-                response = requests.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={"Content-Type": "application/json"},
-                    json={
-                        "model": "claude-sonnet-4-20250514",
-                        "max_tokens": 1000,
-                        "system": system_prompt,
-                        "messages": [{"role": "user", "content": user_msg}]
-                    },
-                    timeout=30
-                )
-
-                if response.status_code == 200:
-                    data = response.json()
-                    analise_texto = data["content"][0]["text"]
+    st.subheader(t["tab_ia"])
+    
+    # Recuperamos o DF filtrado que foi salvo na Tab 2
+    if 'df_para_ia' in st.session_state and not st.session_state.df_para_ia.empty:
+        df_ia = st.session_state.df_para_ia
+        
+        st.write(f"📋 {t['total_partidas']}: {len(df_ia)}")
+        
+        # Botão de Ação
+        if st.button(t["ia_analisar"], type="primary", use_container_width=True):
+            
+            # 1. Seleção de colunas críticas para não poluir o contexto
+            colunas_vaitais = [
+                'time_adv', 'local', 'resultado', 'gols_usuario', 'gols_adv',
+                'xg_usuario', 'xg_adv', 'posse_usuario', 'remates_usuario',
+                'remates_a_baliza_usuario', 'oportunidades_flagrantes_usuario',
+                'passes_certos_usuario', 'passes_totais_usuario'
+            ]
+            
+            # Adicionamos notas_treinador se você já tiver criado a coluna no banco
+            if 'notas_treinador' in df_ia.columns:
+                colunas_vaitais.append('notas_treinador')
+            
+            dados_contexto = df_ia[colunas_vaitais].to_csv(index=False)
+            
+            # 2. Chamada da IA
+            with st.spinner("🧠 " + t.get("ia_processando", "Analyzing data...")):
+                try:
+                    # Injetamos o idioma dinamicamente
+                    lang_instruction = f"\n\nIMPORTANT: Respond strictly in {st.session_state.idioma}."
+                    
+                    response = model.generate_content([PROMPT_ASSISTENTE + lang_instruction, dados_contexto])
+                    
                     st.divider()
-                    st.subheader(t("ia_veredito", lang))
-                    st.markdown(analise_texto)
-                else:
-                    st.error(t("ia_erro", lang))
-
-            except Exception as e:
-                st.error(t("ia_erro", lang))
+                    st.markdown(f"### {t['ia_veredito']}")
+                    st.markdown(response.text)
+                    
+                except Exception as e:
+                    st.error(f"Error: {e}")
+    else:
+        st.warning("⚠️ " + t.get("msg_sem_dados_ia", "Please load data in the Dashboard tab first."))
 
 
 # =======================

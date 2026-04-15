@@ -114,7 +114,7 @@ STRINGS = {
         "footer_email": "📧 E-Mail para contato: onzevirtual1895@gmail.com",
         "footer_seguro": "🔒 Seus dados estão seguros",
         "footer_canal": "Canal Onze Virtual FC",
-        "footer_versao": "V 1.11",
+        "footer_versao": "V 1.12",
         "lbl_idioma": "🌐 Idioma",
     },
     "en": {
@@ -230,7 +230,7 @@ STRINGS = {
         "footer_email": "📧 Contact e-mail: onzevirtual1895@gmail.com",
         "footer_seguro": "🔒 Your data is safe",
         "footer_canal": "Onze Virtual FC Channel",
-        "footer_versao": "V 1.11",
+        "footer_versao": "V 1.12",
         "lbl_idioma": "🌐 Language",
     },
     "es": {
@@ -346,7 +346,7 @@ STRINGS = {
         "footer_email": "📧 E-Mail de contacto: onzevirtual1895@gmail.com",
         "footer_seguro": "🔒 Tus datos están seguros",
         "footer_canal": "Canal Onze Virtual FC",
-        "footer_versao": "V 1.11",
+        "footer_versao": "V 1.12",
         "lbl_idioma": "🌐 Idioma",
     },
     "pt-pt": {
@@ -462,7 +462,7 @@ STRINGS = {
         "footer_email": "📧 E-Mail para contacto: onzevirtual1895@gmail.com",
         "footer_seguro": "🔒 Os teus dados estão seguros",
         "footer_canal": "Canal Onze Virtual FC",
-        "footer_versao": "V 1.11",
+        "footer_versao": "V 1.12",
         "lbl_idioma": "🌐 Idioma",
     },
 }
