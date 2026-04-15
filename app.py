@@ -269,6 +269,8 @@ with tab2:
     if comp_selecionada != todas:
         df_filtrado = df_filtrado[df_filtrado["competicao"] == comp_selecionada]
 
+    st.session_state.df_para_ia = df_filtrado
+    
     if len(df_filtrado) == 0:
         st.warning(t("nenhum_filtro", lang))
         st.stop()
