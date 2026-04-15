@@ -241,7 +241,8 @@ with tab2:
         "gols_usuario", "posse_adv", "remates_adv", "remates_a_baliza_adv", "xg_adv",
         "oportunidades_flagrantes_adv", "cantos_adv", "passes_totais_adv",
         "passes_certos_adv", "cruzamentos_totais_adv", "cruzamentos_certos_adv",
-        "gols_adv", "resultado"
+        "gols_adv", "resultado",
+        "notas_treinador", "analise_ia"
     ]
 
     df = pd.DataFrame(partidas, columns=colunas)
