@@ -553,7 +553,7 @@ genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-1.5-pro')
 
 with tab4:
-    st.subheader(t.get("tab_ia", "AI Analysis"))
+    st.subheader(t["tab_ia"])
     
     # Recuperamos o DF filtrado que foi salvo na Tab 2
     if 'df_para_ia' in st.session_state and not st.session_state.df_para_ia.empty:
