@@ -82,8 +82,7 @@ A aplicação permite:
 ## 🔐 Segurança (Melhorias Futuras)
 
 * Hash de senha com bcrypt
-* Autenticação mais robusta
-* Controle de acesso por plano
+* Autenticação mais robusta
 * Proteção contra SQL Injection
 
 ---
