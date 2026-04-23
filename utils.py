@@ -241,6 +241,244 @@ def validar_dados_partida(dados):
     
     return True, ""
 
+# =======================
+# PARSER HTML — BEPINEX FM EXPORT
+# =======================
+
+def _parse_minutos(valor: str):
+    """
+    Normaliza o campo 'Min' do HTML exportado pelo BepInEx.
+    Exemplos: '90' → 90, '57 (Sai)' → 57, '45 (Entra)' → 45, '' → None
+    """
+    if not valor or not valor.strip():
+        return None
+    try:
+        return int(valor.strip().split()[0])
+    except (ValueError, IndexError):
+        return None
+
+
+def _parse_percentual(valor: str):
+    """
+    Remove símbolo % e converte para int.
+    Exemplos: '0%' → 0, '93' → 93, '0,00' → 0
+    Campos como Passes Decisivos vêm como '5%' → tratamos como unidade 5.
+    """
+    if not valor or not valor.strip():
+        return 0
+    limpo = valor.strip().replace('%', '').replace(',', '.').strip()
+    try:
+        return int(float(limpo))
+    except ValueError:
+        return 0
+
+
+def _parse_decimal(valor: str):
+    """Converte valor decimal com vírgula ou ponto para float."""
+    if not valor or not valor.strip():
+        return 0.0
+    try:
+        return float(valor.strip().replace(',', '.'))
+    except ValueError:
+        return 0.0
+
+
+def _parse_distancia(valor: str):
+    """
+    Extrai valor numérico de strings como '7,1 km' → 7.1
+    """
+    if not valor or not valor.strip():
+        return 0.0
+    try:
+        return float(valor.strip().replace(' km', '').replace(',', '.'))
+    except ValueError:
+        return 0.0
+
+
+def parsear_html_fm(conteudo_html: bytes) -> list[dict]:
+    """
+    Faz o parse do HTML exportado pelo mod BepInEx do Football Manager.
+    Lê as 6 tabelas (Estatísticas Principais, Passe, Ofensivo,
+    Defensivo, Guarda-Redes, Bolas Paradas) e retorna uma lista
+    de dicts com todos os campos por jogador, com o nome como chave
+    de junção entre tabelas.
+
+    Args:
+        conteudo_html: Bytes do arquivo HTML carregado via st.file_uploader
+
+    Returns:
+        list[dict]: Um dict por jogador com todos os campos parseados.
+                    Retorna lista vazia em caso de erro.
+    """
+    try:
+        from bs4 import BeautifulSoup
+    except ImportError:
+        raise ImportError("beautifulsoup4 não instalado. Adicione 'beautifulsoup4' ao requirements.txt.")
+
+    soup = BeautifulSoup(conteudo_html, "html.parser")
+
+    # Mapeia cada h3 para a tabela imediatamente seguinte
+    secoes = {}
+    for h3 in soup.find_all("h3"):
+        tabela = h3.find_next_sibling("table")
+        if tabela:
+            secoes[h3.get_text(strip=True)] = tabela
+
+    # Chave de merge: nome do jogador (coluna 'Nome' presente em todas as tabelas)
+    jogadores: dict[str, dict] = {}
+
+    def _linhas(tabela):
+        """Retorna linhas de dados (pula o header <tr><th>)."""
+        return tabela.find_all("tr")[1:]
+
+    def _celulas(tr):
+        return [td.get_text(strip=True) for td in tr.find_all("td")]
+
+    # ------------------------------------------------------------------
+    # 1. Estatísticas Principais
+    #    Colunas: Núm | Min | Nome | Dist. | %Pass./Tent. | xA | Assist. | xG | Golos
+    # ------------------------------------------------------------------
+    tabela = secoes.get("Estatísticas Principais")
+    if tabela:
+        for tr in _linhas(tabela):
+            c = _celulas(tr)
+            if len(c) < 9:
+                continue
+            nome = c[2].strip()
+            jogadores[nome] = {
+                "numero":               c[0] if c[0] != "-" else None,
+                "nome":                 nome,
+                "minutos_jogados":      _parse_minutos(c[1]),
+                "distancia_km":         _parse_distancia(c[3]),
+                "perc_passes":          _parse_percentual(c[4]),
+                "xa":                   _parse_decimal(c[5]),
+                "assistencias":         int(c[6]) if c[6].isdigit() else 0,
+                "xg":                   _parse_decimal(c[7]),
+                "golos":                int(c[8]) if c[8].isdigit() else 0,
+            }
+
+    # ------------------------------------------------------------------
+    # 2. Passe
+    #    Colunas: Núm | Min | Nome | %Pass./Tent. | %Cruz./Tent.
+    #             | Passes Progressivos | Oportunidades Flagrantes | Passes Decisivos
+    # ------------------------------------------------------------------
+    tabela = secoes.get("Passe")
+    if tabela:
+        for tr in _linhas(tabela):
+            c = _celulas(tr)
+            if len(c) < 8:
+                continue
+            nome = c[2].strip()
+            extra = {
+                "perc_cruzamentos":         _parse_percentual(c[4]),
+                "passes_progressivos":      _parse_percentual(c[5]),
+                "oportunidades_flagrantes": int(c[6]) if c[6].isdigit() else 0,
+                "passes_decisivos":         _parse_percentual(c[7]),  # vem como "X%" → unidade
+            }
+            if nome in jogadores:
+                jogadores[nome].update(extra)
+            else:
+                jogadores[nome] = {"nome": nome, **extra}
+
+    # ------------------------------------------------------------------
+    # 3. Ofensivo
+    #    Colunas: Núm | Min | Nome | %Remates | Dist. | Fintas
+    #             | Faltas Contra | Remate-Barra | xA | xG
+    # ------------------------------------------------------------------
+    tabela = secoes.get("Ofensivo")
+    if tabela:
+        for tr in _linhas(tabela):
+            c = _celulas(tr)
+            if len(c) < 10:
+                continue
+            nome = c[2].strip()
+            extra = {
+                "perc_remates":     _parse_percentual(c[3]),
+                "fintas":           int(c[5]) if c[5].isdigit() else 0,
+                "faltas_sofridas":  int(c[6]) if c[6].isdigit() else 0,
+                "remate_na_barra":  int(c[7]) if c[7].isdigit() else 0,
+            }
+            if nome in jogadores:
+                jogadores[nome].update(extra)
+            else:
+                jogadores[nome] = {"nome": nome, **extra}
+
+    # ------------------------------------------------------------------
+    # 4. Defensivo
+    #    Colunas: Núm | Min | Nome | %Desarmes | %Cabeceamentos
+    #             | Faltas Cometidas | Intercepções | Alívios | Desarmes Decisivos
+    # ------------------------------------------------------------------
+    tabela = secoes.get("Defensivo")
+    if tabela:
+        for tr in _linhas(tabela):
+            c = _celulas(tr)
+            if len(c) < 9:
+                continue
+            nome = c[2].strip()
+            extra = {
+                "perc_desarmes":        _parse_percentual(c[3]),
+                "perc_cabeceamentos":   _parse_percentual(c[4]),
+                "faltas_cometidas":     int(c[5]) if c[5].isdigit() else 0,
+                "intercepcoes":         int(c[6]) if c[6].isdigit() else 0,
+                "alivios":              int(c[7]) if c[7].isdigit() else 0,
+                "desarmes_decisivos":   _parse_percentual(c[8]),  # vem como "X%" → unidade
+            }
+            if nome in jogadores:
+                jogadores[nome].update(extra)
+            else:
+                jogadores[nome] = {"nome": nome, **extra}
+
+    # ------------------------------------------------------------------
+    # 5. Guarda-Redes
+    #    Colunas: Núm | Min | Nome | Defesas Seguras | Defesas Ponta Dedos
+    #             | Defesas Desviadas | Remates Sofridos
+    # ------------------------------------------------------------------
+    tabela = secoes.get("Guarda-Redes")
+    if tabela:
+        for tr in _linhas(tabela):
+            c = _celulas(tr)
+            if len(c) < 7:
+                continue
+            nome = c[2].strip()
+            extra = {
+                "defesas_seguras":      int(c[3]) if c[3].isdigit() else 0,
+                "defesas_ponta_dedos":  int(c[4]) if c[4].isdigit() else 0,
+                "defesas_desviadas":    int(c[5]) if c[5].isdigit() else 0,
+                "remates_sofridos":     int(c[6]) if c[6].isdigit() else 0,
+            }
+            if nome in jogadores:
+                jogadores[nome].update(extra)
+            else:
+                jogadores[nome] = {"nome": nome, **extra}
+
+    # ------------------------------------------------------------------
+    # 6. Bolas Paradas
+    #    Colunas: Núm | Min | Nome | Lançamentos | Cantos
+    #             | Livres Defensivos | Livres Ofensivos
+    # ------------------------------------------------------------------
+    tabela = secoes.get("Bolas Paradas")
+    if tabela:
+        for tr in _linhas(tabela):
+            c = _celulas(tr)
+            if len(c) < 7:
+                continue
+            nome = c[2].strip()
+            extra = {
+                "lancamentos":        int(c[3]) if c[3].isdigit() else 0,
+                "cantos":             int(c[4]) if c[4].isdigit() else 0,
+                "livres_defensivos":  int(c[5]) if c[5].isdigit() else 0,
+                "livres_ofensivos":   int(c[6]) if c[6].isdigit() else 0,
+            }
+            if nome in jogadores:
+                jogadores[nome].update(extra)
+            else:
+                jogadores[nome] = {"nome": nome, **extra}
+
+    # Filtra jogadores sem minutos jogados (convocados que não entraram)
+    resultado = [j for j in jogadores.values() if j.get("minutos_jogados") is not None]
+    return resultado
+
+
 PROMPT_ASSISTENTE = """
 Você é um Auxiliar Técnico de elite, especialista em Football Manager e análise de dados (Moneyball).
 Seu objetivo é analisar o DataFrame de partidas fornecido e identificar:
